@@ -104,7 +104,8 @@ dbWrapper
                     );`
                 );
             } else {
-                console.log('exists')
+                console.log(await db.all("SELECT * from users"))
+                console.log(await db.all("SELECT * from films"))
             }
         } catch (dbError) {
             console.error(dbError);
@@ -326,5 +327,97 @@ module.exports = {
         } catch (dbError) {
             console.log(dbError);
         }
+    },
+
+
+    getFullFilmById: async (filmId, userId = null) => {
+        const film = await db.get(
+            `SELECT * FROM films 
+            WHERE films.film_id = ?`,
+            [filmId]
+        );
+        if (!film) {
+            return null;
+        }
+
+        const genres = await db.all(
+            `SELECT genres.name
+            FROM genres
+            JOIN film_genres
+            ON genres.genre_id = film_genres.genre_id
+            WHERE film_genres.film_id = ?`,
+            [filmId]
+        );
+
+        const actors = await db.all(
+            `SELECT actors.name
+            FROM actors
+            JOIN film_actors
+            ON actors.actor_id = film_actors.actor_id
+            WHERE film_actors.film_id = ?`,
+            [filmId]
+        );
+
+        const directors = await db.all(
+            `SELECT directors.name
+            FROM directors
+            JOIN film_directors
+            ON directors.director_id = film_directors.director_id
+            WHERE film_directors.film_id = ?`,
+            [filmId]
+        );
+
+        const avgRating = await db.get(
+            `SELECT AVG(rating)
+            FROM ratings
+            WHERE ratings.film_id = ?`,
+            [filmId]
+        );
+
+        let userRating = null;
+
+        if (userId) {
+            const rating = await db.get(
+                `SELECT rating
+                FROM ratings
+                WHERE ratings.user_id = ? 
+                AND ratings.film_id = ?`,
+                [userId, filmId]
+            );
+
+            if (rating) userRating = rating.rating;
+        }
+
+        const genreNames = [];
+        for (let i = 0; i < genres.length; i++) {
+            genreNames.push(genres[i].name);
+        }
+
+        const actorNames = [];
+        for (let i = 0; i < actors.length; i++) {
+            actorNames.push(actors[i].name);
+        }
+
+        const directorNames = [];
+        for (let i = 0; i < directors.length; i++) {
+            directorNames.push(directors[i].name);
+        }
+
+        return {
+            film_id: film.film_id,
+            title: film.title,
+            description: film.description,
+            year: film.year,
+            duration: film.duration,
+            country: film.country,
+            poster: film.poster,
+            genres: genreNames,
+            actors: actorNames,
+            directors: directorNames,
+            rating: {
+                average: avgRating.avg || 0,
+                user: userRating
+            }
+        };
     },
 }

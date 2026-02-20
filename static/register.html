@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+    <style>
+        .link{
+            color: rgb(50, 98, 255);
+        }
+    </style>
+</head>
+<body class="vh-100 text-bg-dark">
+    <nav class="navbar bg-body-tertiary bg-dark" data-bs-theme="dark">
+        <div class="container-fluid d-flex justify-content-center">
+            <a class="navbar-brand" href="/">LOGO</a>
+        </div>
+    </nav>
+    <form id="form" class="container-fluid d-flex flex-column align-items-center">
+        <div class="mb-3 w-50" style="margin-top: 200px;">
+            <label for="formGroupExampleInput" class="form-label">Login</label>
+            <input id="login" type="text" class="form-control" id="formGroupExampleInput" placeholder="Login">
+        </div>
+        <div class="mb-3 w-50">
+            <label for="formGroupExampleInput" class="form-label">Password</label>
+            <input id="password" type="text" class="form-control" id="formGroupExampleInput" placeholder="Password">
+        </div>
+        <div class="mb-3 w-50">
+            <label for="formGroupExampleInput" class="form-label">Repeat password</label>
+            <input id="repeat-password" type="text" class="form-control" id="formGroupExampleInput" placeholder="Repeat password">
+        </div>
+        <div class="mb-3 w-50">
+            <label for="formGroupExampleInput" class="form-label">Avatar</label>
+            <input id="avatar" type="text" class="form-control" id="formGroupExampleInput" placeholder="Write url-link">
+        </div>
+        <button type="submit" style="width: 20%;" class="btn btn-success">Register</button>
+        <p style="margin-top: 30px;">Have account? <a class="link" href="/login">Log in</a></p>
+    </form>
+</body>
+<script src="register.js"></script>
+</html>
