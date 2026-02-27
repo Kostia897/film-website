@@ -22,7 +22,8 @@ dbWrapper
                         login TEXT,
                         password TEXT NOT NULL,
                         salt TEXT NOT NULL,
-                        avatar TEXT
+                        avatar TEXT,
+                        role TEXT
                     );`
                 );
                 await db.run(
@@ -103,16 +104,17 @@ dbWrapper
                         CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES films(film_id)
                     );`
                 );
+                const salt = crypto.randomBytes(16).toString('hex')
+                const password = crypto.pbkdf2Sync(admin, salt, 1000, 64, `sha512`).toString(`hex`);
+                await db.addUser('admin', password, '', salt, 'admin')
+
             } else {
-                console.log(await db.all("SELECT * from users"))
-                console.log(await db.all("SELECT * from films"))
+                console.log(await db.all("SELECT * from comments"))
             }
         } catch (dbError) {
             console.error(dbError);
         }
     })
-
-
 
 
 module.exports = {
@@ -159,8 +161,8 @@ module.exports = {
     addUser: async (login, password, avatar, salt) => {
         try{
             await db.run(`
-                INSERT INTO users(login, password, avatar, salt) VALUES(?, ?, ?, ?);`,
-                [login, password, avatar, salt]
+                INSERT INTO users(login, password, avatar, salt, role) VALUES(?, ?, ?, ?, ?);`,
+                [login, password, avatar, salt, 'user']
             );
         } catch (dbError) {
             console.log(dbError);
@@ -181,13 +183,12 @@ module.exports = {
         const token = candidate[0].user_id + '.' + candidate[0].login + '.' + crypto.randomBytes(20).toString('hex');
         return token;
     },
-    getFilms: async (userId) => {
+    getFilms: async () => {
         try{
             return await db.all(
                 `SELECT title, poster, film_id
                 FROM films
                 ;`,
-                [userId, userId]
             );
         } catch (dbError) {
             console.log(dbError);
@@ -328,8 +329,6 @@ module.exports = {
             console.log(dbError);
         }
     },
-
-
     getFullFilmById: async (filmId, userId = null) => {
         const film = await db.get(
             `SELECT * FROM films 
@@ -367,8 +366,10 @@ module.exports = {
             [filmId]
         );
 
-        const avgRating = await db.get(
-            `SELECT AVG(rating)
+        const ratingData = await db.get(
+            `SELECT 
+                AVG(rating) AS avg,
+                COUNT(rating) AS quantity
             FROM ratings
             WHERE ratings.film_id = ?`,
             [filmId]
@@ -415,9 +416,11 @@ module.exports = {
             actors: actorNames,
             directors: directorNames,
             rating: {
-                average: avgRating.avg || 0,
-                user: userRating
-            }
+                average: ratingData.avg || 0,
+                user: userRating,
+                quantity: ratingData.quantity || 0
+            },
+            user_id: userId
         };
     },
 }

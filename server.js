@@ -58,7 +58,7 @@ const server = http.createServer(async (req, res) => {
     else if(req.url === '/login.js'){
         return res.end(loginJsFile)
     }
-    else if(req.url == '/film'){
+    else if(req.url.startsWith('/film?filmId=')){
         return res.end(filmHtmlFile)
     }
     else if(req.url === '/film.js'){
@@ -126,7 +126,7 @@ const server = http.createServer(async (req, res) => {
             res.writeHead(404);
             return res.end(JSON.stringify({ message: "Film not found" }));
         }
-
+        console.log(film)
         res.writeHead(200, {'Content-Type':'application/json'});
         return res.end(JSON.stringify(film));
     }
@@ -143,7 +143,7 @@ const server = http.createServer(async (req, res) => {
 
         req.on('end', async () => {
             const film = JSON.parse(data);
-
+            console.log('rating:' +film.rating)
             await db.addRating(credentials.user_id, film.filmId, film.rating);
 
             res.writeHead(200);
@@ -170,7 +170,6 @@ const server = http.createServer(async (req, res) => {
                     film.country,
                     film.poster
                 );
-                console.log(filmId)
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ filmId }));
 
@@ -180,12 +179,64 @@ const server = http.createServer(async (req, res) => {
             }
         });
     }
+    else if(req.url.startsWith('/video/')){
+        const fileName = decodeURIComponent(req.url.replace('/video/', ''));
+        const videoPath = path.join(__dirname, 'videos', fileName);
+
+        if (!fs.existsSync(videoPath)) {
+            res.writeHead(404);
+            return res.end('Video not found');
+        }
+
+        const stat = fs.statSync(videoPath);
+        const fileSize = stat.size;
+        const range = req.headers.range;
+
+        if (range) {
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+            const chunkSize = end - start + 1;
+
+            res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': 'video/mp4',
+            });
+            fs.createReadStream(videoPath, { start, end }).pipe(res);
+        } else {
+            res.writeHead(200, {
+                'Content-Length': fileSize,
+                'Content-Type': 'video/mp4',
+            });
+            fs.createReadStream(videoPath).pipe(res);
+        }
+        return;
+    }
+    else if(req.url === '/api/getfilms' && req.method === 'GET'){
+        const credentials = getCredentionals(req.headers?.cookie);
+        const userId = credentials ? credentials.user_id : null;
+        const films = await db.getFilms();
+
+        if (!films) {
+            res.writeHead(404);
+            return res.end(JSON.stringify({ message: "Films not found" }));
+        }
+
+        res.writeHead(200, {'Content-Type':'application/json'});
+        return res.end(JSON.stringify({films, userId}));
+    }
+    else if(req.url.startsWith('/api/comments?filmId=') && req.method === 'GET'){
+        const filmId = req.url.split('=')[1];
+        const comments = await db.getCommentsFromFilm(filmId);
+        res.writeHead(200, {'Content-Type':'application/json'});
+        return res.end(JSON.stringify({comments}));
+    }
     else {
         res.writeHead(404);
         res.end("Not Found");
     }
-        
-    
 })
 
 server.listen(3000)
@@ -217,3 +268,34 @@ function guarded(req,res) {
     }
     return credentionals
 }
+
+const io = new Server(server)
+
+io.use((socket, next) => {
+    const cookie = socket.handshake.auth.cookie;
+    const credentionals = getCredentionals(cookie);
+    if(!credentionals) {
+        return next(new Error("no auth"));
+    }
+    socket.credentionals = credentionals;
+    next();
+})
+
+io.on('connection', (socket) => {
+    const userNickname = socket.credentionals.login;
+    const userId = socket.credentionals.user_id;
+
+    socket.on('new_message', async (content, dialogId) => {
+        const now = new Date().toISOString();
+        await db.addComment(content, userId, dialogId, now);
+    
+        io.emit('message', {
+            content: content,
+            author_id: userId,
+            dialog_id: dialogId,
+            login: userNickname,
+            date: now
+        });
+    });
+
+})

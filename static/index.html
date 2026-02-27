@@ -4,26 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3/dist/js.cookie.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <style>
-
+        body{
+            padding-top: 50px;
+        }
+        nav{
+            top: 0px;
+        }
+        #filmsList{
+            gap: 20px;
+            padding: 30px;
+        }
+        .film{
+            background-color: rgb(56, 56, 56);
+            width: 200px;
+            min-height: 300px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+        .film:hover{
+            cursor: pointer;
+        }
+        .poster{
+            width: 200px;
+        }
     </style>
 </head>
 <body class="vh-100 text-bg-dark">
-    <nav class="navbar bg-body-tertiary bg-dark" data-bs-theme="dark">
+    <nav class="navbar bg-body-tertiary bg-dark position-fixed w-100" data-bs-theme="dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">LOGO</a>
             <form class="d-flex" role="search">
                 <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
                 <button class="btn btn-outline-success" type="submit">Search</button>
             </form>
-            <a href="/login"><button type="button" class="btn btn-outline-light">Log in</button></a>
+            <a id="loginOrLeave" href="/login" class="btn btn-outline-light">Log in</a>
         </div>
     </nav>
-    <div class="container-fluid">
-        <p></p>
-    </div>
+    <div id="filmsList" class="container-fluid d-flex justify-content-center flex-wrap"></div>
 </body>
 <script src="index.js"></script>
 </html>

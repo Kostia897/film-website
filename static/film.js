@@ -1,18 +1,29 @@
-const filmId = 1;
+const socket = io({
+    auth: {
+        cookie: document.cookie
+    }
+});
+
+const params = new URLSearchParams(window.location.search);
+const filmId = params.get('filmId');
 
 const stars = document.querySelectorAll('.star');
 const starsContainer = document.getElementById('stars');
 const ratingNumber = document.getElementById('ratingNumber');
+const ratingQuantity = document.getElementById('ratingQuantity');
 
 let averageRating = 0;
 let userRating = null;
 let isLoggedIn = false;
 
+const commentsList = document.getElementById('commentsList');
+const commentForm = document.getElementById('commentForm');
+const commentInput = document.getElementById('commentInput');
+
 async function loadFilm() {
 
     const res = await fetch(`/api/film?filmId=${filmId}`);
     const film = await res.json();
-
     document.getElementById('title').textContent = film.title;
     document.getElementById('poster').src = film.poster;
     document.getElementById('year').textContent = film.year;
@@ -22,11 +33,27 @@ async function loadFilm() {
     document.getElementById('actors').textContent = film.actors.join(", ");
     document.getElementById('director').textContent = film.directors.join(", ");
     document.getElementById('description').textContent = film.description;
+    let loginOrLeave = document.getElementById('loginOrLeave');
+
+    if(film.user_id !== null){
+        isLoggedIn = true;
+        loginOrLeave.classList.add('btn-outline-danger')
+        loginOrLeave.classList.remove('btn-outline-light')
+        loginOrLeave.textContent = 'Log out'
+        loginOrLeave.addEventListener('click', function(e){
+            e.preventDefault();
+            document.cookie = 'token=; Max-Age=0';
+            window.location.assign(`/login`);
+            loginOrLeave.classList.remove('btn-outline-danger')
+            loginOrLeave.classList.add('btn-outline-light')  
+        })
+    }
 
     averageRating = Number(film.rating.average).toFixed(1);
     userRating = film.rating.user;
 
     ratingNumber.textContent = averageRating;
+    ratingQuantity.textContent = `(${film.rating.quantity})`
 
     if (userRating !== null) {
         isLoggedIn = true;
@@ -73,7 +100,10 @@ stars.forEach(star => {
     });
 
     star.addEventListener('click', async () => {
-        if (!isLoggedIn) return;
+        if (!isLoggedIn) {
+            alert("Please log in first")
+            return
+        };
 
         userRating = Number(star.dataset.value);
         paintUser(userRating);
@@ -86,6 +116,7 @@ stars.forEach(star => {
                 rating: userRating
             })
         });
+        
     });
 });
 
@@ -98,3 +129,42 @@ starsContainer.addEventListener('mouseleave', () => {
 });
 
 loadFilm();
+loadComments()
+
+
+commentForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!isLoggedIn) {
+        alert("Please log in first");
+        return;
+    }
+
+    if(!commentInput.value) return;
+    socket.emit('new_message', commentInput.value, filmId)
+    commentInput.value = '';
+    await loadComments();
+})
+
+
+async function loadComments() {
+    const res = await fetch(`/api/comments?filmId=${filmId}`);
+    const comments = await res.json();
+    commentsList.innerHTML = "";
+
+    if(comments.comments.length === 0){
+        commentsList.innerHTML = "No comments yet"
+    }else{
+        comments.comments.forEach(comment => {
+            const div = document.createElement('div');
+            div.className = 'comment-card';
+
+            div.innerHTML = `
+                <div class="comment-author">${comment.login}</div>
+                <div class="comment-date">${new Date(comment.created_at).toLocaleString()}</div>
+                <div class="comment-text">${comment.content}</div>
+            `;
+
+            commentsList.appendChild(div);
+        });
+    }
+}
