@@ -104,9 +104,6 @@ dbWrapper
                         CONSTRAINT fk_film_id FOREIGN KEY (film_id) REFERENCES films(film_id)
                     );`
                 );
-                const salt = crypto.randomBytes(16).toString('hex')
-                const password = crypto.pbkdf2Sync(admin, salt, 1000, 64, `sha512`).toString(`hex`);
-                await db.addUser('admin', password, '', salt, 'admin')
 
             } else {
                 console.log(await db.all("SELECT * from comments"))
