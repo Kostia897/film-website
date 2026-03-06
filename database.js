@@ -105,8 +105,14 @@ dbWrapper
                     );`
                 );
 
+                const salt = crypto.randomBytes(16).toString('hex')
+                const password = crypto.pbkdf2Sync('admin', salt, 1000, 64, `sha512`).toString(`hex`);
+                await db.run(`
+                    INSERT INTO users(login, password, avatar, salt, role) VALUES(?, ?, ?, ?, ?);`,
+                    ['admin', password, '', salt, 'admin']
+                );
             } else {
-                console.log(await db.all("SELECT * from comments"))
+                console.log(await db.all("SELECT * from users"))
             }
         } catch (dbError) {
             console.error(dbError);
@@ -115,7 +121,7 @@ dbWrapper
 
 
 module.exports = {
-    getCommentsFromFilm: async (filmId) => {
+    getCommentsFromFilm: async (filmId, limit, offset) => {
         try{
             return await db.all(
                 `SELECT comments.comment_id,
@@ -126,9 +132,26 @@ module.exports = {
                         comments.film_id
                 FROM comments 
                 JOIN users ON comments.author_id = users.user_id 
-                WHERE comments.film_id = ?;`,
+                WHERE comments.film_id = ?
+                ORDER BY comments.created_at DESC
+                LIMIT ? OFFSET ?
+                ;`,
+                [filmId, limit, offset]
+            );
+        } catch (dbError) {
+            console.error(dbError);
+        }
+    },
+    getCommentsCountFromFilm: async (filmId) => {
+        try{
+            const res = await db.get(
+                `SELECT COUNT(*) AS total
+                FROM comments 
+                WHERE film_id = ?
+                ;`,
                 [filmId]
             );
+            return res.total;
         } catch (dbError) {
             console.error(dbError);
         }
@@ -155,11 +178,11 @@ module.exports = {
             return false;
         }
     },
-    addUser: async (login, password, avatar, salt) => {
+    addUser: async (login, password, avatar, salt, role) => {
         try{
             await db.run(`
                 INSERT INTO users(login, password, avatar, salt, role) VALUES(?, ?, ?, ?, ?);`,
-                [login, password, avatar, salt, 'user']
+                [login, password, avatar, salt, role]
             );
         } catch (dbError) {
             console.log(dbError);
@@ -177,15 +200,29 @@ module.exports = {
             throw new Error('Wrong password');
         }
         console.log(candidate[0])
-        const token = candidate[0].user_id + '.' + candidate[0].login + '.' + crypto.randomBytes(20).toString('hex');
+        const token = candidate[0].user_id + '.' + candidate[0].login + '.' + candidate[0].role + '.' + crypto.randomBytes(20).toString('hex');
         return token;
     },
-    getFilms: async () => {
+    getFilms: async (limit, offset) => {
         try{
             return await db.all(
                 `SELECT title, poster, film_id
                 FROM films
+                ORDER BY film_id DESC
+                LIMIT ? OFFSET ?
                 ;`,
+                [limit, offset]
+            );
+        } catch (dbError) {
+            console.log(dbError);
+        }
+    },
+    getFilmsCount: async () => {
+        try{
+            return await db.all(
+                `SELECT COUNT(*) as total
+                FROM films 
+                ;`
             );
         } catch (dbError) {
             console.log(dbError);
@@ -420,4 +457,31 @@ module.exports = {
             user_id: userId
         };
     },
+    searchFilmsByTitle: async (title, limit, offset) => {
+        try {
+            return await db.all(
+                `SELECT title, poster, film_id
+                FROM films
+                WHERE title LIKE ?
+                ORDER BY film_id DESC
+                LIMIT ? OFFSET ?;`,
+                [`%${title}%`, limit, offset]
+            );
+        } catch (dbError) {
+            console.log(dbError);
+        }
+    },
+    getSearchFilmsCount: async (search) => {
+        try {
+            const res = await db.get(
+                `SELECT COUNT(*) AS total 
+                FROM films 
+                WHERE title LIKE ?;`,
+                [`%${search}%`]
+            );
+            return res.total;
+        } catch (dbError) {
+            console.log(dbError);
+        }
+    }
 }

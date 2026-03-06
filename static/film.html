@@ -104,10 +104,6 @@
     <nav class="navbar bg-body-tertiary bg-dark position-fixed w-100" data-bs-theme="dark" style="z-index: 1;">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">LOGO</a>
-            <form class="d-flex" role="search">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
-                <button class="btn btn-outline-success" type="submit">Search</button>
-            </form>
             <a id="loginOrLeave" href="/login" class="btn btn-outline-light">Log in</a>
         </div>
     </nav>
@@ -235,6 +231,10 @@
         <h4 class="mb-4">Comments</h4>
 
         <div id="commentsList" class="mb-4"></div>
+        
+        <nav aria-label="Comments pagination">
+            <ul id="pagination" class="pagination justify-content-center mt-3"></ul>
+        </nav>
 
         <form id="commentForm">
             <div class="mb-3">

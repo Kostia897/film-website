@@ -128,8 +128,6 @@ starsContainer.addEventListener('mouseleave', () => {
     }
 });
 
-loadFilm();
-loadComments()
 
 
 commentForm.addEventListener('submit', async function(e){
@@ -146,15 +144,25 @@ commentForm.addEventListener('submit', async function(e){
 })
 
 
-async function loadComments() {
-    const res = await fetch(`/api/comments?filmId=${filmId}`);
-    const comments = await res.json();
+let currentPage = 1;
+let totalPages = 1;
+const commentsPerPage = 5;
+
+async function loadComments(page = 1) {
+    currentPage = page;
+    let offset = (page - 1) * commentsPerPage;
+
+    const res = await fetch(`/api/comments?filmId=${filmId}&offset=${offset}&limit=${commentsPerPage}`);
+    const data = await res.json();
     commentsList.innerHTML = "";
 
-    if(comments.comments.length === 0){
+    const comments = data.comments;
+    totalPages = Math.ceil(Number(data.totalCount) / commentsPerPage);
+
+    if(comments.length === 0){
         commentsList.innerHTML = "No comments yet"
     }else{
-        comments.comments.forEach(comment => {
+        comments.forEach(comment => {
             const div = document.createElement('div');
             div.className = 'comment-card';
 
@@ -167,4 +175,50 @@ async function loadComments() {
             commentsList.appendChild(div);
         });
     }
+
+    renderPagination();
 }
+
+
+function renderPagination() {
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    const prevLi = document.createElement('li');
+    prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevLi.innerHTML = `
+        <a class="page-link" href="#">&laquo;</a>
+    `;
+    prevLi.onclick = (e) => {
+        e.preventDefault();
+        if (currentPage > 1) loadComments(currentPage - 1);
+    };
+    pagination.appendChild(prevLi);
+
+    const currentLi = document.createElement('li');
+    currentLi.className = 'page-item';
+    currentLi.innerHTML = `
+        <span class="page-link">
+            ${currentPage} / ${totalPages}
+        </span>
+    `;
+    pagination.appendChild(currentLi);
+
+    const nextLi = document.createElement('li');
+    nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextLi.innerHTML = `
+        <a class="page-link" href="#">&raquo;</a>
+    `;
+    nextLi.onclick = (e) => {
+        e.preventDefault();
+        if (currentPage < totalPages) loadComments(currentPage + 1);
+    };
+    pagination.appendChild(nextLi);
+}
+
+
+
+loadFilm();
+loadComments()

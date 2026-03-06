@@ -101,7 +101,7 @@ const server = http.createServer(async (req, res) => {
             if(!exists){
                 const salt = crypto.randomBytes(16).toString('hex')
                 const password = crypto.pbkdf2Sync(data.content.password, salt, 1000, 64, `sha512`).toString(`hex`);
-                await db.addUser(data.content.login, password, data.content.avatar, salt)
+                await db.addUser(data.content.login, password, data.content.avatar, salt, 'user')
             }
             return res.end(JSON.stringify(exists));
         })
@@ -214,10 +214,27 @@ const server = http.createServer(async (req, res) => {
         }
         return;
     }
-    else if(req.url === '/api/getfilms' && req.method === 'GET'){
+    else if(req.url.startsWith('/api/getfilms') && req.method === 'GET'){
+        const url = new URL(req.url, `http://${req.headers.host}`);
+
+        const offset = Number(url.searchParams.get('offset'));
+        const limit = Number(url.searchParams.get('limit'));
+        const search = url.searchParams.get('search');
+
         const credentials = getCredentionals(req.headers?.cookie);
         const userId = credentials ? credentials.user_id : null;
-        const films = await db.getFilms();
+        const role = credentials ? credentials.role : null;
+        let films;
+        let total;
+
+        if(search) {
+            films = await db.searchFilmsByTitle(search, limit, offset);
+            total = await db.getSearchFilmsCount(search);
+        } else {
+            films = await db.getFilms(limit, offset);
+            const totalCount = await db.getFilmsCount();
+            total = totalCount[0].total;
+        }
 
         if (!films) {
             res.writeHead(404);
@@ -225,17 +242,24 @@ const server = http.createServer(async (req, res) => {
         }
 
         res.writeHead(200, {'Content-Type':'application/json'});
-        return res.end(JSON.stringify({films, userId}));
+        return res.end(JSON.stringify({films, userId, totalCount: total, role: role}));
     }
-    else if(req.url.startsWith('/api/comments?filmId=') && req.method === 'GET'){
-        const filmId = req.url.split('=')[1];
-        const comments = await db.getCommentsFromFilm(filmId);
+    else if(req.url.startsWith('/api/comments') && req.method === 'GET'){
+        const url = new URL(req.url, `http://${req.headers.host}`);
+
+        const filmId = Number(url.searchParams.get('filmId'));
+        const offset = Number(url.searchParams.get('offset'));
+        const limit = Number(url.searchParams.get('limit'));
+
+        const comments = await db.getCommentsFromFilm(filmId, limit, offset);
+        const totalCount = await db.getCommentsCountFromFilm(filmId);
+
         res.writeHead(200, {'Content-Type':'application/json'});
-        return res.end(JSON.stringify({comments}));
+        return res.end(JSON.stringify({comments, totalCount}));
     }
     else {
         res.writeHead(404);
-        res.end("Not Found");
+        res.end("Not Found");   
     }
 })
 
@@ -251,13 +275,13 @@ function getCredentionals(cookies = ""){
     if(!token || !validAuthTokens.includes(token)){
         return null;
     }
-    const [user_id, login] = token.split(".");
+    const [user_id, login, role] = token.split(".");
 
     if(!user_id || !login){
         return null;
     }
 
-    return{user_id, login}
+    return{user_id, login, role}
 }
 
 function guarded(req,res) {

@@ -42,14 +42,20 @@
     <nav class="navbar bg-body-tertiary bg-dark position-fixed w-100" data-bs-theme="dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">LOGO</a>
-            <form class="d-flex" role="search">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
+            <form id="searchForm" class="d-flex" role="search">
+                <input id="searchInput" class="form-control me-2" type="search" placeholder="Search" aria-label="Search"/>
                 <button class="btn btn-outline-success" type="submit">Search</button>
             </form>
-            <a id="loginOrLeave" href="/login" class="btn btn-outline-light">Log in</a>
+            <div class="d-flex gap-2">
+                <a id="addFilmBtn" href="/addfilm" class="btn btn-outline-warning" style="display: none;">Add film</a>
+                <a id="loginOrLeave" href="/login" class="btn btn-outline-light">Log in</a>
+            </div>
         </div>
     </nav>
     <div id="filmsList" class="container-fluid d-flex justify-content-center flex-wrap"></div>
+    <nav aria-label="Comments pagination">
+        <ul id="pagination" class="pagination justify-content-center mt-3"></ul>
+    </nav>
 </body>
 <script src="index.js"></script>
 </html>
