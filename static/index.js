@@ -68,8 +68,6 @@ function renderPagination() {
     const pagination = document.getElementById('pagination');
     pagination.innerHTML = "";
 
-    if (totalPages <= 1) return;
-
     const prevLi = document.createElement('li');
     prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
     prevLi.innerHTML = `
@@ -143,6 +141,44 @@ searchForm.addEventListener('submit', async (e) => {
 
         filmsList.appendChild(div);
     });
+});
 
-    pagination.innerHTML = "";
+
+const filterForm = document.getElementById('filterSearchForm');
+
+filterForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const year = document.getElementById('inputYear').value;
+    const country = document.getElementById('inputCountry').value;
+    const rating = document.getElementById('min-rating').value;
+    const durationFrom = document.getElementById('durationFrom').value;
+    const durationTo = document.getElementById('durationTo').value;
+
+    const res = await fetch(`/api/getfilms?year=${year}&country=${country}&rating=${rating}&durationFrom=${durationFrom}&durationTo=${durationTo}&limit=${filmsPerPage}&offset=0`);    
+    const data = await res.json();
+
+    filmsList.innerHTML = "";
+
+    if(data.films.length === 0){
+        filmsList.innerHTML = "<p class='text-center'>No films found</p>";
+        pagination.innerHTML = "";
+        return;
+    }
+
+    data.films.forEach(film => {
+        const div = document.createElement('div');
+        div.classList.add('film');
+
+        div.innerHTML = `
+            <img class="poster" src="${film.poster}" /> 
+            <p>${film.title}</p>
+        `;
+
+        div.addEventListener('click', () => {
+            window.location.assign(`/film?filmId=${film.film_id}`);
+        });
+
+        filmsList.appendChild(div);
+    });
 });
