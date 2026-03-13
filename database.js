@@ -112,7 +112,7 @@ dbWrapper
                     ['admin', password, '', salt, 'admin']
                 );
             } else {
-                console.log(await db.all("SELECT * from users"))
+                // console.log(await db.all("SELECT * from users"))
             }
         } catch (dbError) {
             console.error(dbError);

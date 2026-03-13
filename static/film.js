@@ -34,7 +34,10 @@ async function loadFilm() {
     document.getElementById('director').textContent = film.directors.join(", ");
     document.getElementById('description').textContent = film.description;
     let loginOrLeave = document.getElementById('loginOrLeave');
-
+    const source = document.getElementById('videoSource');
+    source.src = `/video/movie${filmId}.mp4`;
+    document.getElementById('player').load();    
+    
     if(film.user_id !== null){
         isLoggedIn = true;
         loginOrLeave.classList.add('btn-outline-danger')
