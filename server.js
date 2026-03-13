@@ -80,23 +80,91 @@ app.get("/api/film", async (req, res) => {
 });
 
 app.get("/api/getfilms", async (req, res) => {
-    const { offset = 0, limit = 10, search } = req.query;
-    const credentials = getCredentials(req);
-    const userId = credentials ? credentials.user_id : null;
-    const role = credentials ? credentials.role : null;
-    let films;
-    let total;
+    const {
+        offset = 0,
+        limit = 12,
+        search,
+        year,
+        country,
+        rating,
+        durationFrom,
+        durationTo
+    } = req.query;
 
-    if (search) {
-        films = await db.searchFilmsByTitle(search, limit, offset);
-        total = await db.getSearchFilmsCount(search);
-    } else {
-        films = await db.getFilms(limit, offset);
-        const totalCount = await db.getFilmsCount();
-        total = totalCount[0].total;
+    let query = `SELECT films.film_id, films.title, films.poster, films.year, films.country, films.duration,
+                    AVG(ratings.rating) as average_rating
+                FROM films
+                LEFT JOIN ratings ON films.film_id = ratings.film_id
+                WHERE 1=1`;    
+    const params = [];
+
+    if(search) {
+        query += ` AND title LIKE ?`;
+        params.push(`%${search}%`);
+    }
+    if(year) {
+        query += ` AND year = ?`;
+        params.push(year);
+    }
+    if(country) {
+        query += ` AND country = ?`;
+        params.push(country);
+    }
+    if(durationFrom) {
+        query += ` AND duration >= ?`;
+        params.push(durationFrom);
+    }
+    if(durationTo) {
+        query += ` AND duration <= ?`;
+        params.push(durationTo);
+    }
+    
+    query += ` GROUP BY films.film_id`;
+
+    if(rating && rating != "any") {
+        query += ` HAVING average_rating >= ?`;
+        params.push(rating);
     }
 
-    res.json({ films, userId, role, totalCount: total });
+    query += ` ORDER BY film_id DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+
+    try {
+        const films = await db.all(query, params);
+
+        let countQuery = `SELECT COUNT(*) as total FROM films WHERE 1=1`;
+        const countParams = [];
+
+        if(search){
+            countQuery += ` AND title LIKE ?`;
+            countParams.push(`%${search}%`);
+        } 
+        if(year){
+            countQuery += ` AND year = ?`;
+            countParams.push(year);
+        } 
+        if(country){
+            countQuery += ` AND country = ?`;
+            countParams.push(country);
+        } 
+        if(durationFrom){
+            countQuery += ` AND duration >= ?`; countParams.push(durationFrom);
+        } 
+        if(durationTo){
+            countQuery += ` AND duration <= ?`;
+            countParams.push(durationTo);
+        } 
+
+        const res2 = await db.get(countQuery, countParams);
+        const totalCount = res2.total;
+
+        res.json({ films, userId: null, role: null, totalCount });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error" });
+    }
+
 });
 
 app.get("/api/comments", async (req, res) => {
