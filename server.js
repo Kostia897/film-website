@@ -80,7 +80,7 @@ app.get("/api/film", async (req, res) => {
 });
 
 app.get("/api/getfilms", async (req, res) => {
-    const {
+    const data = {
         offset = 0,
         limit = 12,
         search,
@@ -126,12 +126,12 @@ app.get("/api/getfilms", async (req, res) => {
         params.push(rating);
     }
 
-    query += ` ORDER BY film_id DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY films.film_id DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
 
     try {
-        const films = await db.all(query, params);
+        const films = await db.getFilms(query, params);
 
         let countQuery = `SELECT COUNT(*) as total FROM films WHERE 1=1`;
         const countParams = [];
@@ -156,7 +156,7 @@ app.get("/api/getfilms", async (req, res) => {
             countParams.push(durationTo);
         } 
 
-        const res2 = await db.get(countQuery, countParams);
+        const res2 = await db.getFilmsCount(countQuery, countParams);
         const totalCount = res2.total;
 
         res.json({ films, userId: null, role: null, totalCount });
@@ -250,7 +250,7 @@ function getCredentialsFromCookie(cookieStr = "") {
 
 
 io.use((socket, next) => {
-    const cookie = socket.handshake.auth.cookie;
+    const cookie = socket.handshake.headers.cookie;
     const credentials = getCredentialsFromCookie(cookie);
     if(!credentials) {
         return next(new Error("no auth"));

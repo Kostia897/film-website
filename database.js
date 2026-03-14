@@ -203,27 +203,16 @@ module.exports = {
         const token = candidate[0].user_id + '.' + candidate[0].login + '.' + candidate[0].role + '.' + crypto.randomBytes(20).toString('hex');
         return token;
     },
-    getFilms: async (limit, offset) => {
+    getFilms: async (query, data) => {
         try{
-            return await db.all(
-                `SELECT title, poster, film_id
-                FROM films
-                ORDER BY film_id DESC
-                LIMIT ? OFFSET ?
-                ;`,
-                [limit, offset]
-            );
+            return await db.all(query, data);
         } catch (dbError) {
             console.log(dbError);
         }
     },
-    getFilmsCount: async () => {
+    getFilmsCount: async (countQuery, countParams) => {
         try{
-            return await db.all(
-                `SELECT COUNT(*) as total
-                FROM films 
-                ;`
-            );
+            return await db.get(countQuery, countParams);
         } catch (dbError) {
             console.log(dbError);
         }
