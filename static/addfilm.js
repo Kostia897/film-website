@@ -1,8 +1,34 @@
 const form = document.getElementById('filmForm');
 const statusText = document.getElementById('status');
 
+async function loadGenres() {
+    const res = await fetch('/api/genres');
+    const genres = await res.json();
+
+    const select = document.getElementById('genres');
+
+    genres.forEach(genre => {
+        const option = document.createElement('option');
+        option.value = genre.genre_id;
+        option.textContent = genre.name;
+        select.appendChild(option);
+    });
+}
+
+loadGenres();
+
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
+
+    const selectedGenres = Array.from(
+        document.getElementById('genres').selectedOptions
+    ).map(option => Number(option.value));
+
+    const actorsInput = document.getElementById('actors').value;
+    const directorsInput = document.getElementById('directors').value;
+
+    const actorNames = actorsInput.split(',').map(actor => actor.trim()).filter(actor => actor);
+    const directorNames = directorsInput.split(',').map(director => director.trim()).filter(director => director);
 
     const film = {
         title: document.getElementById('title').value,
@@ -10,7 +36,10 @@ form.addEventListener('submit', async (e) => {
         year: Number(document.getElementById('year').value),
         duration: Number(document.getElementById('duration').value),
         country: document.getElementById('country').value,
-        poster: document.getElementById('poster').value
+        poster: document.getElementById('poster').value,
+        genres: selectedGenres,
+        actors: actorNames,
+        directors: directorNames
     };
 
     try {

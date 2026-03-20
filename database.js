@@ -105,6 +105,18 @@ dbWrapper
                     );`
                 );
 
+                await db.run(
+                    `INSERT INTO genres (name) VALUES
+                    ('Action'),
+                    ('Comedy'),
+                    ('Drama'),
+                    ('Horror'),
+                    ('Sci-Fi'),
+                    ('Thriller'),
+                    ('Romance');`
+                );
+            
+
                 const salt = crypto.randomBytes(16).toString('hex')
                 const password = crypto.pbkdf2Sync('admin', salt, 1000, 64, `sha512`).toString(`hex`);
                 await db.run(`
@@ -253,6 +265,19 @@ module.exports = {
             console.log(dbError);
         }
     },
+    addGenresToFilm: async (filmId, genreIds) => {
+        try {
+            for (let i = 0; i < genreIds.length; i++) {
+                await db.run(
+                    `INSERT INTO film_genres(film_id, genre_id)
+                    VALUES (?, ?)`,
+                    [filmId, genreIds[i]]
+                );
+            }
+        } catch (dbError) {
+            console.log(dbError);
+        }
+    },
     getAvatarUrl: async (userId) => {
         try{
             return await db.get(
@@ -307,6 +332,14 @@ module.exports = {
             console.log(dbError);
         }
     },
+    getActors: async () => {
+        try {
+            return await db.all(`SELECT * FROM actors ORDER BY name ASC`);
+        } catch (dbError) {
+            console.log(dbError);
+            return [];
+        }
+    },
     addDirector: async (name) => {
         try {
             const res = await db.run(
@@ -337,6 +370,14 @@ module.exports = {
             );
         } catch (dbError) {
             console.log(dbError);
+        }
+    },
+    getDirectors: async () => {
+        try {
+            return await db.all(`SELECT * FROM directors ORDER BY name ASC`);
+        } catch (dbError) {
+            console.log(dbError);
+            return [];
         }
     },
     getFilmsByYear: async (year) => {
@@ -472,5 +513,12 @@ module.exports = {
         } catch (dbError) {
             console.log(dbError);
         }
-    }
+    },
+    getGenres: async () => {
+        try {
+            return await db.all(`SELECT * FROM genres`);
+        } catch (dbError) {
+            console.log(dbError);
+        }
+    },
 }
