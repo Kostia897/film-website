@@ -46,6 +46,7 @@ dbWrapper
                         duration INTEGER,
                         country TEXT,
                         poster TEXT,
+                        video TEXT
                     );`
                 );
                 await db.run(
@@ -260,8 +261,8 @@ module.exports = {
     createFilm: async (title, description, year, duration, country, poster, video) => {
         try{
             const res = await db.run(
-                `INSERT INTO films(title, description, year, duration, country, poster)
-                VALUES (?, ?, ?, ?, ?, ?);`,
+                `INSERT INTO films(title, description, year, duration, country, poster, video)
+                VALUES (?, ?, ?, ?, ?, ?, ?);`,
                 [title, description, year, duration, country, poster, video]
             );
 
@@ -481,6 +482,7 @@ module.exports = {
             duration: film.duration,
             country: film.country,
             poster: film.poster,
+            video: film.video,
             genres: genreNames,
             actors: actorNames,
             directors: directorNames,

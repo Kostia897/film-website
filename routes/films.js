@@ -129,12 +129,12 @@ router.get("/genres", async (req, res) => {
 });
 
 router.post("/addFilm", upload.fields([{ name: "poster", maxCount: 1 },
-    { name: "videp", maxCount: 1 }]), 
+    { name: "video", maxCount: 1 }]), 
     async (req, res) => {
   try {
     const film = req.body;
-    const posterPath = "/poster/" + req.files['poster'][0].filename;
-    const videoPath = "/video/" + req.files['video'][0].filename;
+    const posterPath = "/posters/" + req.files['poster'][0].filename;
+    const videoPath = "/videos/" + req.files['video'][0].filename;
 
     const genres = JSON.parse(film.genres)
     const actors = JSON.parse(film.actors)
@@ -146,7 +146,6 @@ router.post("/addFilm", upload.fields([{ name: "poster", maxCount: 1 },
         film.year,
         film.duration,
         film.country,
-        film.poster,
         posterPath,
         videoPath
     );

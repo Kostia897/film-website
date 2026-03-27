@@ -4,7 +4,6 @@ const statusText = document.getElementById('status');
 async function loadGenres() {
     const res = await fetch('/api/genres');
     const genres = await res.json();
-
     const select = document.getElementById('genres');
 
     genres.forEach(genre => {

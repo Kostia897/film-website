@@ -43,12 +43,8 @@ app.get("/addfilm", (req, res) => {
     res.sendFile(path.join(__dirname, "static", "addfilm.html"));
 });
 
-app.use("/video", express.static(path.join(__dirname, "videos")));
-app.use("/poster", express.static(path.join(__dirname, "posters")));
-
-
-
-
+app.use("/posters", express.static("posters"));
+app.use("/videos", express.static("videos"));
 
 server.listen(3000, () => {
   console.log('Server on http://localhost:3000');

@@ -35,7 +35,7 @@ async function loadFilm() {
     document.getElementById('description').textContent = film.description;
     let loginOrLeave = document.getElementById('loginOrLeave');
     const source = document.getElementById('videoSource');
-    source.src = `/video/movie${filmId}.mp4`;
+    source.src = film.video
     document.getElementById('player').load();    
     
     if(film.user_id !== null){
