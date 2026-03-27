@@ -30,23 +30,23 @@ form.addEventListener('submit', async (e) => {
     const actorNames = actorsInput.split(',').map(actor => actor.trim()).filter(actor => actor);
     const directorNames = directorsInput.split(',').map(director => director.trim()).filter(director => director);
 
-    const film = {
-        title: document.getElementById('title').value,
-        description: document.getElementById('description').value,
-        year: Number(document.getElementById('year').value),
-        duration: Number(document.getElementById('duration').value),
-        country: document.getElementById('country').value,
-        poster: document.getElementById('poster').value,
-        genres: selectedGenres,
-        actors: actorNames,
-        directors: directorNames
-    };
+    const formData = new FormData();
+
+    formData.append('title', document.getElementById('title').value);
+    formData.append('description', document.getElementById('description').value);
+    formData.append('year', Number(document.getElementById('year').value));
+    formData.append('duration', Number(document.getElementById('duration').value));
+    formData.append('country', document.getElementById('country').value);
+    formData.append('poster', document.getElementById('poster').files[0]);
+    formData.append('video', document.getElementById('video').files[0]);
+    formData.append('genres', JSON.stringify(selectedGenres));
+    formData.append('actors', JSON.stringify(actorNames));
+    formData.append('directors', JSON.stringify(directorNames));
 
     try {
         const res = await fetch('/api/addFilm', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(film)
+            body: formData
         });
 
         const data = await res.json();

@@ -44,6 +44,7 @@ app.get("/addfilm", (req, res) => {
 });
 
 app.use("/video", express.static(path.join(__dirname, "videos")));
+app.use("/poster", express.static(path.join(__dirname, "posters")));
 
 
 

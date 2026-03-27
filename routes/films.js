@@ -1,7 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const db = require("../database")
+const db = require("../database");
+const multer = require('multer');
+const path = require('path');
 const { requireAuth, getCredentials } = require("../middleware/auth")
+
+const storage = multer.diskStorage({
+    destination: (requireAuth, file, cb) => {
+        if(file.fieldname === "poster") cb(null, "posters/")
+        else if (file.fieldname === "video") cb(null, "videos/")
+    },
+    filename: (requireAuth, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname))
+    }
+})
+
+const upload = multer({ storage })
 
 
 router.get("/film", async (req, res) => {
@@ -114,9 +128,17 @@ router.get("/genres", async (req, res) => {
     res.json(genres);
 });
 
-router.post("/addFilm", async (req, res) => {
+router.post("/addFilm", upload.fields([{ name: "poster", maxCount: 1 },
+    { name: "videp", maxCount: 1 }]), 
+    async (req, res) => {
   try {
     const film = req.body;
+    const posterPath = "/poster/" + req.files['poster'][0].filename;
+    const videoPath = "/video/" + req.files['video'][0].filename;
+
+    const genres = JSON.parse(film.genres)
+    const actors = JSON.parse(film.actors)
+    const directors = JSON.parse(film.directors)
 
     const filmId = await db.createFilm(
         film.title,
@@ -124,16 +146,19 @@ router.post("/addFilm", async (req, res) => {
         film.year,
         film.duration,
         film.country,
-        film.poster
+        film.poster,
+        posterPath,
+        videoPath
     );
 
-    if (film.genres && film.genres.length > 0) {
-        await db.addGenresToFilm(filmId, film.genres);
+
+    if (genres && genres.length > 0) {
+        await db.addGenresToFilm(filmId, genres);
     }
 
-    if (film.actors && film.actors.length > 0) {
-        for (let i = 0; i < film.actors.length; i++) {
-            const name = film.actors[i];
+    if (actors && actors.length > 0) {
+        for (let i = 0; i < actors.length; i++) {
+            const name = actors[i];
             let actor = await db.getActorIdByName(name);
             let actorId;
             if (!actor) {
@@ -145,9 +170,9 @@ router.post("/addFilm", async (req, res) => {
         }
     }
 
-    if (film.directors && film.directors.length > 0) {
-        for (let i = 0; i < film.directors.length; i++) {
-            const name = film.directors[i];
+    if (directors && directors.length > 0) {
+        for (let i = 0; i < directors.length; i++) {
+            const name = directors[i];
             let director = await db.getDirectorIdByName(name);
             let directorId;
             if (!director) {

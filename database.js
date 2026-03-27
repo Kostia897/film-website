@@ -45,7 +45,7 @@ dbWrapper
                         year INTEGER,
                         duration INTEGER,
                         country TEXT,
-                        poster TEXT
+                        poster TEXT,
                     );`
                 );
                 await db.run(
@@ -125,6 +125,11 @@ dbWrapper
                 );
             } else {
                 // console.log(await db.all("SELECT * from users"))
+                const columns = await db.all(`PRAGMA table_info(films);`);
+                const hasVideo = columns.some(column => column.name === "video");
+                if (!hasVideo) {
+                    await db.run(`ALTER TABLE films ADD COLUMN video TEXT;`);
+                }
             }
         } catch (dbError) {
             console.error(dbError);
@@ -252,12 +257,12 @@ module.exports = {
             console.log(dbError);
         }
     },
-    createFilm: async (title, description, year, duration, country, poster) => {
+    createFilm: async (title, description, year, duration, country, poster, video) => {
         try{
             const res = await db.run(
                 `INSERT INTO films(title, description, year, duration, country, poster)
                 VALUES (?, ?, ?, ?, ?, ?);`,
-                [title, description, year, duration, country, poster]
+                [title, description, year, duration, country, poster, video]
             );
 
             return res.lastID;
